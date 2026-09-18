@@ -2,7 +2,8 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <title>text</title>
+    <title>Больше не будет</title>
+    <link rel="icon" type="image/jpeg" href="https://i.imgur.com/kBpBHJG.jpeg">
     <style>
         body {
             color: #fff;
@@ -59,14 +60,12 @@
             flex-wrap: wrap;
         }
 
-        /* ==== ОБЁРТКА КНОПКИ ==== */
         .btn-wrap {
             position: relative;
             display: inline-block;
-            padding: 4px; /* запас, чтобы орбы не обрезались */
+            padding: 4px;
         }
 
-        /* Контейнер орбов — точно по размеру кнопки */
         .btn-orbs {
             position: absolute;
             top: 4px;
@@ -86,7 +85,6 @@
             will-change: transform, opacity;
         }
 
-        /* ==== КНОПКА TELEGRAM ==== */
         .telegram-btn {
             display: inline-flex;
             align-items: center;
@@ -125,7 +123,6 @@
             fill: currentColor;
         }
 
-        /* ==== КНОПКА STEAM ==== */
         .steam-btn {
             display: inline-flex;
             align-items: center;
@@ -225,10 +222,6 @@
             opacity: 0;
             pointer-events: none;
             will-change: transform, opacity;
-        }
-
-        #sc-widget {
-            display: none;
         }
 
         .track-title {
@@ -402,15 +395,12 @@
         <input type="range" id="volume-slider" min="0" max="1" step="0.01" value="1">
     </div>
 
-    <iframe id="sc-widget" width="100%" height="300" scrolling="no" frameborder="no" allow="autoplay; encrypted-media" 
-        src="https://w.soundcloud.com/player/?url=https%3A//api.soundcloud.com/tracks/2113010553&color=%23ff5500&auto_play=false&hide_related=true&show_comments=false&show_user=false&show_reposts=false&show_teaser=false&visual=false&sharing=false">
-    </iframe>
+    <!-- ЛОКАЛЬНЫЙ MP3 — залей файл track.mp3 в репозиторий -->
+    <audio id="my-audio" src="track.mp3" preload="auto" loop></audio>
 
-    <script src="https://w.soundcloud.com/player/api.js" type="text/javascript"></script>
     <script>
         (function() {
-            var widgetIframe = document.getElementById('sc-widget');
-            var widget = SC.Widget(widgetIframe);
+            var audio = document.getElementById('my-audio');
             var cover = document.getElementById('cover');
             var coverContainer = document.getElementById('coverContainer');
             var mainBlock = document.getElementById('mainBlock');
@@ -467,10 +457,9 @@
                 var w = btn.offsetWidth;
                 var h = btn.offsetHeight;
 
-                // Спавн СНАРУЖИ кнопки — за её краем
                 var side = Math.floor(Math.random() * 4);
                 var x, y;
-                var outside = 2; // на сколько пикселей наружу
+                var outside = 2;
 
                 if (side === 0) {
                     x = Math.random() * w;
@@ -499,7 +488,6 @@
                 dirX /= len;
                 dirY /= len;
 
-                // Разлёт наружу от кнопки
                 var distance = 8 + Math.random() * 10;
                 var dx = dirX * distance;
                 var dy = dirY * distance;
@@ -613,54 +601,50 @@
                 }
             }
 
-            // ==== SOUNDCLOUD ====
-            widget.bind(SC.Widget.Events.READY, function() {
-                console.log('Плеер готов!');
-                widget.setVolume(1);
+            // ==== УПРАВЛЕНИЕ АУДИО ====
+            cover.addEventListener('click', function() {
+                if (audio.paused) {
+                    audio.play();
+                } else {
+                    audio.pause();
+                }
+            });
 
-                cover.addEventListener('click', function() {
-                    if (isPlaying) {
-                        widget.pause();
-                    } else {
-                        widget.play();
-                    }
-                });
+            audio.addEventListener('play', function() {
+                isPlaying = true;
+                cover.style.boxShadow = '0 4px 30px rgba(232, 164, 234, 0.7), 0 0 60px rgba(232, 164, 234, 0.4)';
+                trackTitle.classList.add('playing');
+                trackArtist.classList.add('playing');
+                startOrbs();
+            });
 
-                var updateVolume = function() {
-                    var val = parseFloat(volumeSlider.value);
-                    widget.setVolume(val);
-                    
-                    if (val === 0) volumeLabel.textContent = '🔇';
-                    else if (val < 0.5) volumeLabel.textContent = '🔉';
-                    else volumeLabel.textContent = '🔊';
-                };
+            audio.addEventListener('pause', function() {
+                isPlaying = false;
+                cover.style.boxShadow = '0 4px 20px rgba(0, 0, 0, 0.5)';
+                trackTitle.classList.remove('playing');
+                trackArtist.classList.remove('playing');
+                stopOrbs();
+            });
 
-                volumeSlider.addEventListener('input', updateVolume);
-                volumeSlider.addEventListener('change', updateVolume);
+            audio.addEventListener('ended', function() {
+                isPlaying = false;
+                cover.style.boxShadow = '0 4px 20px rgba(0, 0, 0, 0.5)';
+                trackTitle.classList.remove('playing');
+                trackArtist.classList.remove('playing');
+                stopOrbs();
+            });
 
-                widget.bind(SC.Widget.Events.PLAY, function() {
-                    isPlaying = true;
-                    cover.style.boxShadow = '0 4px 30px rgba(232, 164, 234, 0.7), 0 0 60px rgba(232, 164, 234, 0.4)';
-                    trackTitle.classList.add('playing');
-                    trackArtist.classList.add('playing');
-                    startOrbs();
-                });
+            // ==== ГРОМКОСТЬ ====
+            // Максимум ползунка = 1, но внутренне можно выкрутить выше
+            audio.volume = 1;
 
-                widget.bind(SC.Widget.Events.PAUSE, function() {
-                    isPlaying = false;
-                    cover.style.boxShadow = '0 4px 20px rgba(0, 0, 0, 0.5)';
-                    trackTitle.classList.remove('playing');
-                    trackArtist.classList.remove('playing');
-                    stopOrbs();
-                });
+            volumeSlider.addEventListener('input', function() {
+                var val = parseFloat(this.value);
+                audio.volume = Math.min(val, 1);
 
-                widget.bind(SC.Widget.Events.FINISH, function() {
-                    isPlaying = false;
-                    cover.style.boxShadow = '0 4px 20px rgba(0, 0, 0, 0.5)';
-                    trackTitle.classList.remove('playing');
-                    trackArtist.classList.remove('playing');
-                    stopOrbs();
-                });
+                if (val === 0) volumeLabel.textContent = '🔇';
+                else if (val < 0.5) volumeLabel.textContent = '🔉';
+                else volumeLabel.textContent = '🔊';
             });
         })();
     </script>
